@@ -2,7 +2,7 @@ ARG BASEIMG=ubuntu:bionic
 FROM $BASEIMG
 
 # Set ROS distribution
-ARG DIST=melodic
+ARG ROS_DISTRO=melodic
 
 # Base system tools
 RUN apt update \
@@ -18,6 +18,7 @@ RUN apt update \
     lsb-release \
     mc \
     pkg-config \
+    python-pip \
     python3-pip \
     software-properties-common \
     sudo \
@@ -48,7 +49,7 @@ RUN /bin/sh -c 'echo "deb http://packages.ros.org/ros/ubuntu $(lsb_release -sc) 
     python-rosdep \
     python-catkin-lint \
     python-catkin-tools \
-    ros-${DIST}-desktop-full \
+    ros-${ROS_DISTRO}-desktop-full \
  && rosdep init \
  && apt clean
 
@@ -63,28 +64,18 @@ RUN /bin/sh -c 'echo "deb http://packages.osrfoundation.org/gazebo/ubuntu-stable
 # or it fails to launch with a symbol error on gzserver
 RUN apt-get update && apt-get upgrade -y libignition-math4
 
-#
-# Additional GEAR dependencies obtained running
-# rosdep install -si --reinstall --from-path src/ | cut -f7- -d" " | sort
-
 RUN apt update \
  && apt install -y \
-    libboost-all-dev \
-    libeigen3-dev \
-    libncurses5-dev \
-    libzmq3-dev \
-    python-catkin-lint \
-    python-rospkg \
-    ros-melodic-effort-controllers \
-    ros-melodic-joint-state-publisher-gui \
-    ros-melodic-moveit-fake-controller-manager \
-    ros-melodic-moveit-kinematics \
-    ros-melodic-moveit-planners-ompl \
-    ros-melodic-moveit-resources-panda-moveit-config \
-    ros-melodic-moveit-ros-move-group \
-    ros-melodic-moveit-ros-visualization \
-    ros-melodic-moveit-setup-assistant \
-    ros-melodic-moveit-visual-tools \
+    build-essential \
+    cmake \
+    libzmqpp-dev \
+    libopencv-dev \
+    libgoogle-glog-dev \
+    protobuf-compiler \
+    ros-$ROS_DISTRO-octomap-msgs \
+    ros-$ROS_DISTRO-octomap-ros \
+    ros-$ROS_DISTRO-joy \
+    python-vcstool \
  && apt clean
 
 # Set USER and GROUP
@@ -128,10 +119,17 @@ RUN rosdep update
 # When running a container start in the developer's home folder.
 WORKDIR /home/$USER
 
+COPY dependencies.yaml /tmp/dependencies.yaml
+RUN cd ~/ws/src/ \
+ && mkdir flightmare_deps \
+ && cd flightmare_deps \
+ && vcs-import < /tmp/dependencies.yaml
+
 # Source all the needed environment files.
-RUN /bin/sh -c 'echo ". /opt/ros/${DIST}/setup.bash" >> ~/.bashrc' \
+RUN /bin/sh -c 'echo ". /opt/ros/${ROS_DISTRO}/setup.bash" >> ~/.bashrc' \
  && /bin/sh -c 'echo ". /usr/share/gazebo/setup.sh" >> ~/.bashrc' \
- && /bin/sh -c 'echo "set-option -g default-shell /bin/bash" >> ~/.tmux.conf'
+ && /bin/sh -c 'echo "set-option -g default-shell /bin/bash" >> ~/.tmux.conf' \
+ && /bin/sh -c 'echo "export FLIGHTMARE_PATH=~/ws/src/flightmare_deps/RPG_Flightmare" >> ~/.bashrc'
 
 #
 # Ccache

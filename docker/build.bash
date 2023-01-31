@@ -30,6 +30,10 @@ TAGGED_IMAGE_NAME=$IMAGE_NAME:$(export LC_ALL=C; date +%Y_%m_%d_%H%M)
 
 echo ".*" > "$DOCKERFILE_PATH"/.dockerignore
 
+cp ../workspace/external/flightmare/flightros/dependencies.yaml dependencies.yaml
+sed -i "s/git@/https:\/\//" dependencies.yaml
+sed -i "s/.com:/.com\//" dependencies.yaml
+
 docker build --rm -t $TAGGED_IMAGE_NAME -f "$DOCKERFILE_PATH"/Dockerfile "$DOCKERFILE_PATH" && \
 docker tag $TAGGED_IMAGE_NAME $IMAGE_NAME:latest && \
 echo "Built $TAGGED_IMAGE_NAME and tagged as $IMAGE_NAME:latest"
